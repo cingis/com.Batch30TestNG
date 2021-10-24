@@ -9,59 +9,68 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.Select;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.asserts.SoftAssert;
+import utilities.TestBase;
 
 import java.nio.channels.SelectableChannel;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class Test3 {
+public class Test3 extends TestBase {
 
-    // 1) "https://www.facebook.com/" SAYFASINA GiDiN
-    // 2) YENi HESAP OLUSTUR BUTONUNA TIKLAYIN
-    // 3) DOGUM TARiHi BOLUMUNDEKi GUNLERiN LiSTESiNi ALIN
-    // 4) DOGUM TARiHi BOLUMUNDEKi AYLARIN LiSTESiNi ALIN
-    // 5) DOGUM TARiHi BOLUMUNDEKi YILLARIN LiSTESiNi ALIN
-
-    WebDriver driver;
-    @BeforeMethod
-    public void setup() throws InterruptedException {
-        WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        Thread.sleep(5000);
-    }
-
+    // 1) https://www.ntv.com.tr/ ADRESİNE GİT
+    // 2) SAYFANIN TiTLE'NIN "NTV HABER - Haberler, Son Dakika Haberleri" OLDUGUNU DOGRULA
+    // 3) SAYFANIN HANDLE DEGERiNi AL.
+    // 4) SPOR SAYFASINA TIKLA
+    // 5) URL'iN "https://www.ntvspor.net/" OLDUGUNU DOGRULA
+    // 6) ANA SAYFAYA GERi DON
     @Test
-    public void dropDown() {
-        driver.get("https://www.facebook.com/");
-        driver.findElement(By.xpath("(//a[@role='button'])[2]")).click();
+    public void test() throws InterruptedException {
+        driver.get("https://www.ntv.com.tr/");
+        System.out.println("SAYFA TiTLE: " + driver.getTitle());
 
-        WebElement dropdownGun = driver.findElement(By.cssSelector("#day"));
-        Select select1 = new Select(dropdownGun);
+        String expectedTitle = "NTV HABER - Haberler, Son Dakika Haberleri";
+        String actualTitle = driver.getTitle();
 
-        List<WebElement> daySecenekler = select1.getOptions();
-        System.out.println("============ GUNLER ==========");
-        for (WebElement each : daySecenekler) {
-            System.out.println(each.getText());
+        SoftAssert softAssert = new SoftAssert();
+        softAssert.assertEquals(actualTitle, expectedTitle, "Title istenenden farkli");
+
+        String ilkSayfaHandleDegeri = driver.getWindowHandle();
+        System.out.println("1. SAYFANIN HANDLE DEGERi: " + ilkSayfaHandleDegeri);
+
+        driver.findElement(By.xpath("//a[@class='header-category-link spor']")).click();
+
+        System.out.println(driver.getCurrentUrl());
+
+        Set<String> tumWindowHandles = driver.getWindowHandles();
+        System.out.println("Tum Handles: " + tumWindowHandles);
+
+        String ikinciWindowHandle = "";
+
+        for (String each: tumWindowHandles
+        ) {
+            if(!each.equals(ilkSayfaHandleDegeri)){
+                ikinciWindowHandle = each;
+            }
         }
+        System.out.println("2. SAYFANIN HANDLE DEGERi: " + ikinciWindowHandle);
 
-        WebElement dropdownAy = driver.findElement(By.cssSelector("#month"));
-        Select select2 = new Select(dropdownAy);
+        //2. SAYFAYA GECMiS olduk
+        driver.switchTo().window(ikinciWindowHandle);
 
-        List<WebElement> aySecenekler = select2.getOptions();
-        System.out.println("============ AYLAR ==========");
-        for (WebElement each : aySecenekler) {
-            System.out.println(each.getText());
-        }
+        System.out.println(driver.getCurrentUrl());
 
-        WebElement dropdownYear = driver.findElement(By.cssSelector("#year"));
-        Select select3 = new Select(dropdownYear);
+        String expectedURL = "https://www.ntvspor.net/";
+        String actualURL = driver.getCurrentUrl();
 
-        List<WebElement> yilSecenekler = select3.getOptions();
-        System.out.println("============ YILLAR ==========");
-        for (WebElement each : yilSecenekler) {
-            System.out.println(each.getText());
-        }
+        softAssert.assertEquals(driver.getCurrentUrl(),expectedURL
+                ,"Url is not as expected");
+
+        softAssert.assertAll();
+
+        Thread.sleep(3000);
+
+        driver.switchTo().window(ilkSayfaHandleDegeri);
     }
 }
